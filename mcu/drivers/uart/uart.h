@@ -1,8 +1,7 @@
 /*
- * my_uart.h
+ * uart.h
  *
- * Created: 12/12/2021 7:55:55 PM
- *  Author: thevi
+ *  Author: thevinh
  */
 
 #ifndef UART_H_
@@ -10,7 +9,7 @@
 
 #include <stdint.h>
 
-#define UART_TRANSMITTER_QUEUE_SIZE 32
+#define UART_TRANSMITTER_QUEUE_SIZE 96
 
 /*
 initialize UART, transmitter queue

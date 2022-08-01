@@ -1,17 +1,22 @@
 /*
- * thread.c
+ * uart.c
  *
- * Created: 12/11/2021 10:56:42 AM
  *  Author: thevinh
  */
 
 #include "thread.h"
-#include "UARTService.h"
-#include "stddef.h"
+#include <stddef.h>
 #include <string.h>
+#include <avr/interrupt.h>
+#include "bsp.h"
+
+#define THREAD_BLOCK() \
+    TIMSK0 = 0;        \
+    asm("CLI \n"       \
+        "CALL " TIMER0_OVF_vect_ADD " \n");
 struct ThreadData
 {
-    uint8_t status;
+    volatile uint8_t status;
     void *(*t_Run)(void *);
     void *arg;
     uint16_t sp;
@@ -19,7 +24,7 @@ struct ThreadData
 };
 
 static thread_t thread_id;
-static struct ThreadData tarray[MAX_THREAD];
+static struct ThreadData tarray[NUM_OF_THREAD];
 static uint16_t main_st_pt;
 
 ISR(TIMER0_OVF_vect) // interrupt function of timer0 overflow vector
@@ -44,7 +49,9 @@ ISR(TIMER0_OVF_vect) // interrupt function of timer0 overflow vector
         "PUSH R22 \n"   // Push register on stack
         "PUSH R23 \n"   // Push register on stack
         "PUSH R26 \n"   // Push register on stack
-        "PUSH R27 \n");   // Push register on stack
+        "PUSH R27 \n"); // Push register on stack
+    // "PUSH R28 \n"   // Push register on stack
+    // "PUSH R29 \n"); // Push register on stack
     TCNT0 = 0;
     uint16_t st_pt = SP;
     if (thread_id == MIN_THREAD_ID)
@@ -57,7 +64,7 @@ ISR(TIMER0_OVF_vect) // interrupt function of timer0 overflow vector
     }
 
     thread_id = thread_id + 1;
-    if (thread_id > (MAX_THREAD + MIN_THREAD_ID))
+    if (thread_id > (NUM_OF_THREAD + MIN_THREAD_ID))
     {
         thread_id = MIN_THREAD_ID;
     }
@@ -66,7 +73,7 @@ ISR(TIMER0_OVF_vect) // interrupt function of timer0 overflow vector
         while (tarray[thread_id - MIN_THREAD_ID - 1].status == 0)
         {
             thread_id = thread_id + 1;
-            if (thread_id > (MAX_THREAD + MIN_THREAD_ID))
+            if (thread_id > (NUM_OF_THREAD + MIN_THREAD_ID))
             {
                 thread_id = MIN_THREAD_ID;
                 break;
@@ -84,7 +91,9 @@ ISR(TIMER0_OVF_vect) // interrupt function of timer0 overflow vector
     }
 
     SP = st_pt;
-    asm(              // restore all general register
+    asm( // restore all general register
+         // "POP R29 \n"  // Pop register on stack
+         // "POP R28 \n"  // Pop register on stack
         "POP R27 \n"  // Pop register on stack
         "POP R26 \n"  // Pop register on stack
         "POP R23 \n"  // Pop register on stack
@@ -117,7 +126,7 @@ void Run()
 
 void init_mutil_thread()
 {
-    for (uint8_t i = 0; i < MAX_THREAD; ++i)
+    for (uint8_t i = 0; i < NUM_OF_THREAD; ++i)
     {
         tarray[i].status = 0; // disable
     }
@@ -125,17 +134,17 @@ void init_mutil_thread()
     thread_id = MIN_THREAD_ID;
 
     /*
-    setup timer 0  to use as trigger interrupt. it over follow at 255. prescaler for 8, it take 0.128 ms to overflow interrupt,
+    setup timer 0  to use as trigger interrupt. it overflow at 255. prescaler for 64, it take 1,024 ms to overflow interrupt,
     */
     TCNT0 = 0; // for 256 clock to flow
     TCCR0A = 0x00;
-    TCCR0B = (1 << CS01);  //| (1<<CS00);;  // Timer mode with 8 prescler
+    TCCR0B = (1 << CS01) | (1 << CS00); // Timer mode with 64 prescler
     TIMSK0 = (1 << TOIE0); // Enable timer0 overflow interrupt(TOIE0)
 
     /*
-    setup timer 2 to use as timer. it over follow at 255. prescaler for 1024, that mean 0.064 ms per tick
+    setup timer 2 to use as timer. it overflow at 255. prescaler for 1024, that mean 0,064 ms per tick
     */
-    TCNT2 = 0; // 255 clock to flow
+    TCNT2 = 0; // 255 clock to overflow
     TCCR2A = 0x00;
     TCCR2B = (1 << CS22) | (1 << CS21) | (1 << CS20); // Timer mode with 1024 prescaler
 }
@@ -143,7 +152,7 @@ void init_mutil_thread()
 uint8_t thread_create(thread_t *t_id, void *(*func_Run)(void *), void *arg)
 {
     uint8_t sts = ERROR;
-    for (uint8_t i = 0; i < MAX_THREAD; ++i)
+    for (uint8_t i = 0; i < NUM_OF_THREAD; ++i)
     {
         if (tarray[i].status == 0)
         {
@@ -165,34 +174,27 @@ uint8_t thread_create(thread_t *t_id, void *(*func_Run)(void *), void *arg)
 
 uint8_t thread_join(uint8_t t_id, void **retval)
 {
-    TIMSK0 = 0; // disable over flow interrupt of timer0
     while (1)
     {
-        TIMSK0 = 0;
         if (tarray[t_id - MIN_THREAD_ID - 1].status == 0)
         {
             *retval = tarray[t_id - MIN_THREAD_ID - 1].arg;
             return SUCCESS;
         }
-        asm(
-            "CLI \n"               // disable global interrupt
-            "CALL 0x00000040 \n"); // call over flow interrupt vector of timer0 directly
+        THREAD_BLOCK();
     }
     return ERROR;
 }
 
-void thread_exit(thread_t *retval)
+void thread_exit(void *retval)
 {
-    if (thread_self() == MIN_THREAD_ID)
+    if (thread_id == MIN_THREAD_ID)
     {
         return; // thread main always run
     }
-    TIMSK0 = 0;
-    tarray[thread_self() - MIN_THREAD_ID - 1].arg = retval;
-    tarray[thread_self() - MIN_THREAD_ID - 1].status = 0; // stop
-    asm(
-        "CLI \n"               // disable global interrupt
-        "CALL 0x00000040 \n"); // call over flow interrupt vector of timer0 directly
+    tarray[thread_id - MIN_THREAD_ID - 1].arg = retval;
+    tarray[thread_id - MIN_THREAD_ID - 1].status = 0; // stop
+    THREAD_BLOCK();
 }
 
 thread_t thread_self()
@@ -202,13 +204,11 @@ thread_t thread_self()
 
 void thread_sleep(uint16_t n)
 {
-    TIMSK0 = 0; // disable over flow interrupt of timer0
     uint8_t pre = TCNT2;
     uint8_t now = 0;
     uint16_t time = 0;
     while (1)
     {
-        TIMSK0 = 0;
         now = TCNT2;
         if (now >= pre)
         {
@@ -223,55 +223,46 @@ void thread_sleep(uint16_t n)
             break;
         }
         pre = now;
-        asm(
-            "CLI \n"               // disable global interrupt
-            "CALL 0x00000040 \n"); // call over flow interrupt vector of timer0 directly
+        THREAD_BLOCK();
     }
 }
 
 void thread_blocked()
 {
-    TIMSK0 = 0;
-    asm(
-        "CLI \n"               // disable global interrupt
-        "CALL 0x00000040 \n"); // call over flow interrupt vector of timer0 directly
+    THREAD_BLOCK();
 }
 
-void thread_mutex_lock(uint8_t *lock)
+void thread_mutex_lock(volatile mt_lock_t *lock)
 {
-    //if (*lock == thread_self()) return;
+    if (*lock == thread_id)
+        return;
     while (*lock != THREAD_UNLOCK)
     {
-        thread_blocked();
+        THREAD_BLOCK();
     }
-    thread_blocked();
+    THREAD_BLOCK();
     while (*lock != THREAD_UNLOCK)
     {
-        thread_blocked();
+        THREAD_BLOCK();
     }
-    if (*lock == THREAD_UNLOCK)
-    {
-        *lock = thread_self();
-    }
+    *lock = thread_id;
     return;
 }
 
-void thread_mutex_unlock(uint8_t *lock)
+void thread_mutex_unlock(volatile mt_lock_t *lock)
 {
-    // if (*lock != thread_self())
-    // {
-    //     return;
-    // }
+    if (*lock != thread_id)
+        return;
     *lock = THREAD_UNLOCK;
     return;
 }
 
-uint8_t get_stack_size(thread_t t_id)
+uint8_t get_thread_stack_use_size(thread_t t_id)
 {
     uint8_t size = 0;
     if (t_id == MIN_THREAD_ID)
     {
-        if (thread_self() == t_id)
+        if (thread_id == t_id)
         {
             size = RAMEND - SP;
         }
@@ -282,7 +273,7 @@ uint8_t get_stack_size(thread_t t_id)
     }
     else
     {
-        if (thread_self() == t_id)
+        if (thread_id == t_id)
         {
             size = (uint16_t)&tarray[t_id - MIN_THREAD_ID - 1].stack[sizeof(tarray->stack) - 1] - SP;
         }
@@ -294,7 +285,11 @@ uint8_t get_stack_size(thread_t t_id)
     return size;
 }
 
-uint8_t get_status(thread_t t_id)
+uint8_t get_thread_status(thread_t t_id)
 {
+    if ((t_id < MIN_THREAD_ID) || (t_id > (MIN_THREAD_ID + NUM_OF_THREAD)))
+        return 0;
+    if (t_id == MIN_THREAD_ID)
+        return 1;
     return tarray[t_id - MIN_THREAD_ID - 1].status;
 }

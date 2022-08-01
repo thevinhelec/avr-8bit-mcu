@@ -1,7 +1,6 @@
 /*
- * thread.c
+ * handler.c
  *
- * Created: 24/7/2022 10:56:42 AM
  *  Author: thevinh
  */
 
@@ -13,16 +12,16 @@ void *handler_loop(void *arg)
     while (1)
     {
         struct Handler *handler = (struct Handler *)arg;
-        //thread_mutex_lock(handler->mt_lock);
+        thread_mutex_lock(&handler->mt_lock);
         if (isEmpty(handler->message_queue) == 1)
         {
-            //thread_mutex_unlock(handler->mt_lock);
-            thread_sleep(100);
+            thread_mutex_unlock(&handler->mt_lock);
+            thread_sleep(156); // 10 ms
         }
         else
         {
             void *message_pointer = dequeue(handler->message_queue);
-            //thread_mutex_unlock(handler->mt_lock);
+            thread_mutex_unlock(&handler->mt_lock);
             handler->func_handler(message_pointer);
         }
     }
@@ -45,13 +44,13 @@ uint8_t handler_create(struct Handler *handler, void (*func)(void *), struct Cqu
 
 uint8_t addMessage(struct Handler *handler, void *message)
 {
-    //thread_mutex_lock(handler->mt_lock);
+    thread_mutex_lock(&handler->mt_lock);
     if (isFull(handler->message_queue) == 1)
     {
-        //thread_mutex_unlock(handler->mt_lock);
+        thread_mutex_unlock(&handler->mt_lock);
         return ERROR;
     }
     enqueue(handler->message_queue, message);
-    //thread_mutex_unlock(handler->mt_lock);
+    thread_mutex_unlock(&handler->mt_lock);
     return SUCCESS;
 }

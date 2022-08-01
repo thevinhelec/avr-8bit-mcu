@@ -1,13 +1,12 @@
 /*
  * circular_queue.c
  *
- * Created: 12/13/2021 11:16:02 PM
- *  Author: thevi
+ *  Author: thevinh
  */
 
 #include "util/circular_queue.h"
 #include <string.h>
-void setupCqueue(struct Cqueue *c_queue, uint16_t *static_array, uint8_t capacity)
+void setupCqueue(struct Cqueue *c_queue, uint16_t *array, uint8_t capacity)
 {
     c_queue->capacity = capacity;
     c_queue->front = 0;
@@ -15,8 +14,8 @@ void setupCqueue(struct Cqueue *c_queue, uint16_t *static_array, uint8_t capacit
 
     // This is important, see the enqueue
     c_queue->rear = capacity - 1;
-    memset((void *)static_array, 0, sizeof(uint16_t) * capacity);
-    c_queue->array = static_array;
+    memset((void *)array, 0, sizeof(uint16_t) * capacity);
+    c_queue->array = array;
 }
 
 uint8_t isFull(struct Cqueue *c_queue)
@@ -44,12 +43,12 @@ uint16_t dequeue(struct Cqueue *c_queue)
     return item;
 }
 
-uint8_t get_size(struct Cqueue *c_queue)
+uint8_t getSize(struct Cqueue *c_queue)
 {
     return c_queue->size;
 }
 
-uint8_t get_free_size(struct Cqueue *c_queue)
+uint8_t getFreeSize(struct Cqueue *c_queue)
 {
     return c_queue->capacity - c_queue->size;
 }

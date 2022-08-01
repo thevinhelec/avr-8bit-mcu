@@ -1,8 +1,7 @@
 /*
- * my_uart.c
+ * uart.c
  *
- * Created: 12/17/2021 7:27:03 PM
- *  Author: thevi
+ *  Author: thevinh
  */
 #include "uart.h"
 #include <avr/interrupt.h>
@@ -46,18 +45,11 @@ void uart_init(uint16_t ubrr)
     UCSR0C = (3 << UCSZ00);
 }
 
-uint8_t minimum(uint8_t a, uint8_t b)
-{
-    if (a > b)
-        return b;
-    return a;
-}
-
 uint8_t write_uart(const uint8_t *buffer, uint8_t size)
 {
     UCSR0B &= ~(1 << UDRIE0); // disable data register empty interrupt
-    uint8_t free_size = get_free_size(&transmitter_queue);
-    uint8_t min = minimum((uint8_t)free_size, size);
+    uint8_t free_size = getFreeSize(&transmitter_queue);
+    uint8_t min = (free_size > size) ? size : free_size;
     for (uint8_t i = 0; i < min; i++)
     {
         enqueue(&transmitter_queue, buffer[i]);

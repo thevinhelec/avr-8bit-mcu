@@ -1,7 +1,6 @@
 /*
- * thread.c
+ * handler.h
  *
- * Created: 24/7/2022 10:56:42 AM
  *  Author: thevinh
  */
 
@@ -25,13 +24,11 @@ return uint_8 : return 0 if success. other as error
 */
 uint8_t handler_create(struct Handler *handler, void (*func)(void *), struct Cqueue *queue);
 
-
 /* add a massage to Handler.
-parameter   handler : 
+parameter   handler :
             message : message to add
 return uint_8 : return 0 if success. other as error
 */
-uint8_t addMessage(struct Handler *handler, void * message);
-
+uint8_t addMessage(struct Handler *handler, void *message);
 
 #endif /* HANDLER_H_ */

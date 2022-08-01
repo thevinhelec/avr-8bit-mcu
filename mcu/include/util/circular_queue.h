@@ -1,8 +1,7 @@
 /*
  * circular_queue.h
  *
- * Created: 12/13/2021 11:25:30 PM
- *  Author: thevi
+ *  Author: thevinh
  */
 
 #ifndef CIRCULAR_QUEUE_H_
@@ -10,16 +9,16 @@
 
 #include <stdint.h>
 
-#define INT_MIN -32768
-
 struct Cqueue
 {
-    uint8_t front, rear, size;
+    uint8_t front;
+    uint8_t rear;
+    uint8_t size;
     uint8_t capacity;
     uint16_t *array;
 };
 
-void setupCqueue(struct Cqueue *c_queue, uint16_t *static_array, uint8_t capacity);
+void setupCqueue(struct Cqueue *c_queue, uint16_t *array, uint8_t capacity);
 
 /*
 Check if the queue is full
@@ -36,7 +35,7 @@ uint8_t isEmpty(struct Cqueue *c_queue);
 /*
 add an item to the c_queue (at rear). need to check isFull before enqueue
 parameter *c_queue : poiter to struct Cqueue
-		  item : item
+          item : item
 return void
 */
 void enqueue(struct Cqueue *c_queue, uint16_t item);
@@ -53,14 +52,14 @@ get number of item in c_queue.
 parameter *c_queue : poiter to struct Cqueue
 return uint_8 : number of item
 */
-uint8_t get_size(struct Cqueue *c_queue);
+uint8_t getSize(struct Cqueue *c_queue);
 
 /*
 get number of remain slot in c_queue.
 parameter *c_queue : poiter to struct Cqueue
 return uint_8 : number of free slot
 */
-uint8_t get_free_size(struct Cqueue *c_queue);
+uint8_t getFreeSize(struct Cqueue *c_queue);
 
 /*
 see item at front of c_queue. not remove item from queue
