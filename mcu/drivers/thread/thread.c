@@ -204,11 +204,13 @@ thread_t thread_self()
 
 void thread_sleep(uint16_t n)
 {
+    TIMSK0 = 0;
     uint8_t pre = TCNT2;
     uint8_t now = 0;
     uint16_t time = 0;
     while (1)
     {
+        TIMSK0 = 0;
         now = TCNT2;
         if (now >= pre)
         {

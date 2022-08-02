@@ -165,6 +165,13 @@ void UART_printf(const char *__fmt, ...)
     va_end(arguments);
 }
 
+void UART_vprintf(const char *__fmt, va_list args)
+{
+    char buffer[UART_PRINT_MAX_SIZE];
+    vsnprintf(buffer, UART_PRINT_MAX_SIZE, __fmt, args);
+    UART_print(buffer);
+}
+
 void UART_printf_async(const char *__fmt, ...)
 {
     va_list arguments;
@@ -191,6 +198,13 @@ void UART_printf_P(const char *__fmt_P, ...)
     vsnprintf_P(buffer, UART_PRINT_MAX_SIZE, __fmt_P, arguments);
     UART_print(buffer);
     va_end(arguments);
+}
+
+void UART_vprintf_P(const char *__fmt_P, va_list args)
+{
+    char buffer[UART_PRINT_MAX_SIZE];
+    vsnprintf_P(buffer, UART_PRINT_MAX_SIZE, __fmt_P, args);
+    UART_print(buffer);
 }
 
 void UART_printf_async_P(const char *__fmt_P, ...)

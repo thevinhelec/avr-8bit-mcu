@@ -63,6 +63,8 @@ return void
 */
 void UART_printf(const char *__fmt_P, ...);
 
+void UART_vprintf(const char *__fmt_P, va_list args);
+
 /*
 Same as UART_printf(), but this function is async.
 parameter buffer : pointer to input data, max size of buffer is 255
@@ -76,6 +78,8 @@ parameter buffer : pointer to input data, max size of buffer is 255
 return void
 */
 void UART_printf_P(const char *__fmt_P, ...);
+
+void UART_vprintf_P(const char *__fmt_P, va_list args);
 
 /*
 Same as UART_printf_async(), but use program memory data
