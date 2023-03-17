@@ -81,7 +81,7 @@ macro(add_avr_executable target_name avr_mcu)
         ${elf_file}
 
         PROPERTIES
-            COMPILE_FLAGS "-mmcu=${avr_mcu} -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -Wall -c -std=gnu99" # add -g2 to debug
+            COMPILE_FLAGS "-mmcu=${avr_mcu} -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -g2 -Wall -c -std=gnu99" # add -g2 to debug
             LINK_FLAGS    "-mmcu=${avr_mcu} -Wl,-Map=${map_file} ${AVR_LINKER_LIBS}"
     )
 
@@ -91,7 +91,6 @@ macro(add_avr_executable target_name avr_mcu)
 
         COMMAND
             ${CMAKE_OBJCOPY} -O ihex -R .eeprom -R .fuse -R .lock -R .signature ${elf_file} ${hex_file}
-
         DEPENDS ${elf_file}
     )
 

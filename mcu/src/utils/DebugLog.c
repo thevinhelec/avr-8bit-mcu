@@ -4,8 +4,8 @@
  *  Author: thevinh
  */
 
-#include "DebugLog.h"
-#include "UARTService.h"
+#include "utils/DebugLog.h"
+#include "services/uart/UARTService.h"
 
 void debugLog(enum LogLevel lv, const char *__fmt, ...)
 {

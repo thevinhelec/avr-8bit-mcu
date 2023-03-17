@@ -4,16 +4,16 @@
  *  Author: thevinh
  */
 
-#include "thread.h"
+#include <drivers/thread/thread.h>
 #include <stddef.h>
 #include <string.h>
 #include <avr/interrupt.h>
-#include "bsp.h"
+#include "bsp/bsp.h"
 
 #define THREAD_BLOCK() \
     TIMSK0 = 0;        \
     asm("CLI \n"       \
-        "CALL " TIMER0_OVF_vect_ADD " \n");
+        "CALL " THREAD_TIMER_OVF_VECT_ADDRESS " \n");
 struct ThreadData
 {
     volatile uint8_t status;
@@ -27,9 +27,11 @@ static thread_t thread_id;
 static struct ThreadData tarray[NUM_OF_THREAD];
 static uint16_t main_st_pt;
 
-ISR(TIMER0_OVF_vect) // interrupt function of timer0 overflow vector
+ISR(THREAD_TIMER_OVF_VECT) // interrupt function of timer0 overflow vector
 {
     asm(                // save all general register
+        "PUSH R0 \n"    // Push register on stack
+        "PUSH R1 \n"    // Push register on stack
         "PUSH R2 \n"    // Push register on stack
         "PUSH R3 \n"    // Push register on stack
         "PUSH R4 \n"    // Push register on stack
@@ -46,12 +48,23 @@ ISR(TIMER0_OVF_vect) // interrupt function of timer0 overflow vector
         "PUSH R15 \n"   // Push register on stack
         "PUSH R16 \n"   // Push register on stack
         "PUSH R17 \n"   // Push register on stack
+        "PUSH R18 \n"   // Push register on stack
+        "PUSH R19 \n"   // Push register on stack
+        "PUSH R20 \n"   // Push register on stack
+        "PUSH R21 \n"   // Push register on stack
         "PUSH R22 \n"   // Push register on stack
         "PUSH R23 \n"   // Push register on stack
+        "PUSH R24 \n"   // Push register on stack
+        "PUSH R25 \n"   // Push register on stack
         "PUSH R26 \n"   // Push register on stack
-        "PUSH R27 \n"); // Push register on stack
-    // "PUSH R28 \n"   // Push register on stack
-    // "PUSH R29 \n"); // Push register on stack
+        "PUSH R27 \n"   // Push register on stack
+    // #if (defined __AVR_ATmega2560__)
+        "PUSH R28 \n"   // Push register on stack
+        "PUSH R29 \n"
+        "PUSH R30 \n"
+        "PUSH R31 \n"
+    // #endif
+    ); // Push register on stack
     TCNT0 = 0;
     uint16_t st_pt = SP;
     if (thread_id == MIN_THREAD_ID)
@@ -92,12 +105,22 @@ ISR(TIMER0_OVF_vect) // interrupt function of timer0 overflow vector
 
     SP = st_pt;
     asm( // restore all general register
-         // "POP R29 \n"  // Pop register on stack
-         // "POP R28 \n"  // Pop register on stack
+    // #if (defined __AVR_ATmega2560__)
+        "POP R31 \n"  // Pop register on stack
+        "POP R30 \n"  // Pop register on stack
+        "POP R29 \n"  // Pop register on stack
+        "POP R28 \n"  // Pop register on stack
+    // #endif
         "POP R27 \n"  // Pop register on stack
         "POP R26 \n"  // Pop register on stack
+        "POP R25 \n"  // Pop register on stack
+        "POP R24 \n"  // Pop register on stack
         "POP R23 \n"  // Pop register on stack
         "POP R22 \n"  // Pop register on stack
+        "POP R21 \n"  // Pop register on stack
+        "POP R20 \n"  // Pop register on stack
+        "POP R19 \n"  // Pop register on stack
+        "POP R18 \n"  // Pop register on stack
         "POP R17 \n"  // Pop register on stack
         "POP R16 \n"  // Pop register on stack
         "POP R15 \n"  // Pop register on stack
@@ -113,7 +136,10 @@ ISR(TIMER0_OVF_vect) // interrupt function of timer0 overflow vector
         "POP R5 \n"   // Pop register on stack
         "POP R4 \n"   // Pop register on stack
         "POP R3 \n"   // Pop register on stack
-        "POP R2 \n"); // Pop register on stack
+        "POP R2 \n"   // Pop register on stack
+        "POP R1 \n"   // Pop register on stack
+        "POP R0 \n"   // Pop register on stack
+    );
     TCNT0 = 0;        // for 255 clock to flow
     TIMSK0 = (1 << TOIE0);
 }
@@ -161,7 +187,7 @@ uint8_t thread_create(thread_t *t_id, void *(*func_Run)(void *), void *arg)
             memset(tarray[i].stack, 0, STACK_SIZE);
             tarray[i].stack[sizeof(tarray->stack) - 1] = (((uint16_t)&Run) & 0xFF);
             tarray[i].stack[sizeof(tarray->stack) - 2] = (((uint16_t)&Run >> 8) & 0xFF);
-            tarray[i].sp = (uint16_t)&tarray[i].stack[sizeof(tarray->stack) - 38];
+            tarray[i].sp = (uint16_t)&tarray[i].stack[sizeof(tarray->stack) - 52];
             tarray[i].status = 1; // run this thread
             *t_id = i + MIN_THREAD_ID + 1;
             sts = SUCCESS;
@@ -227,11 +253,6 @@ void thread_sleep(uint16_t n)
         pre = now;
         THREAD_BLOCK();
     }
-}
-
-void thread_blocked()
-{
-    THREAD_BLOCK();
 }
 
 void thread_mutex_lock(volatile mt_lock_t *lock)

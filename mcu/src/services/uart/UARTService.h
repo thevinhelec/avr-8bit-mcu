@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <avr/pgmspace.h>
-#include "bsp.h"
+#include "bsp/bsp.h"
 
 #define UART_BAUD 4800 // Baudrate
 #define UART_UBRR UART_FOSC / 16 / UART_BAUD - 1

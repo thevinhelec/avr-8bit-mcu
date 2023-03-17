@@ -1,19 +1,15 @@
 /*
  * main.c
- *
- * Created: 7/22/2022 7:24:57 PM
  *  Author: thevinh
  */
-
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include "thread.h"
-#include "UARTService.h"
-#include "DebugLog.h"
-#include "stddef.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <avr/pgmspace.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include "drivers/thread/thread.h"
+#include "services/uart/UARTService.h"
+#include "utils/DebugLog.h"
 
 void* RunT1(void *arg)
 {
@@ -33,7 +29,7 @@ void* RunT2(void *arg)
 {
     while (1)
     {
-        uint16_t counter = 0;
+       uint16_t counter = 0;
         for (uint16_t i = 0; i < 30000; i++)
         {
             uint16_t c=0;
@@ -65,23 +61,23 @@ void* RunT3(void *arg)
 
 int main(void)
 {
-    __malloc_heap_end =(uint16_t) 1800;
+    // __malloc_heap_end =(uint16_t) 1800;
     DDRB |= 0b11111111;
     DDRC |= 0b00001111;
     init_mutil_thread();
     UART_Init(UART_UBRR);
     sei();
     PORTC ^= (1 << PORTC0);
-    debugLog_P(LOG_HIGH, PSTR("Program start\n"));
+     debugLog_P(LOG_HIGH, PSTR("Program start\n"));
 
-    // thread_t t1_id;
+    thread_t t1_id;
     thread_t t2_id;
     // thread_t t3_id;
     // void *return_t1;
     // void *return_t2;
     // void *return_t3;
 
-    // thread_create(&t1_id, RunT1, NULL);
+    thread_create(&t1_id, RunT1, NULL);
     thread_create(&t2_id, RunT2, NULL);
     // thread_create(&t3_id, RunT3, NULL);
 
@@ -110,7 +106,7 @@ int main(void)
                 {
                     stackSize = get_thread_stack_use_size(i);
                 }
-                debugLog(LOG_MID, "%s:id[%d]sts[%d]Siz[%d]\n", __func__, i, status, stackSize);
+                debugLog_P(LOG_MID, PSTR("%s:id[%d]sts[%d]Siz[%d]\n"), __func__, i, status, stackSize);
             }
             PORTC ^= (1 << PORTC0);
         }

@@ -3,10 +3,11 @@
  *
  *  Author: thevinh
  */
-#include "UARTService.h"
-#include "uart.h"
-#include "thread.h"
-#include "util/handler.h"
+
+#include "services/uart/UARTService.h"
+#include "drivers/uart/uart.h"
+#include "drivers/thread/thread.h"
+#include "utils/handler.h"
 #ifdef UART_ASYNC
 #include <stdlib.h>
 #include <string.h>

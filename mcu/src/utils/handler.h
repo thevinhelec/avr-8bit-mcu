@@ -7,8 +7,8 @@
 #ifndef HANDLER_H_
 #define HANDLER_H_
 
-#include "thread.h"
-#include "util/circular_queue.h"
+#include "drivers/thread/thread.h"
+#include "utils/circular_queue.h"
 struct Handler
 {
     thread_t thread_hander_id;

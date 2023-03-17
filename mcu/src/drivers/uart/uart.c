@@ -3,9 +3,9 @@
  *
  *  Author: thevinh
  */
-#include "uart.h"
+#include "drivers/uart/uart.h"
 #include <avr/interrupt.h>
-#include "util/circular_queue.h"
+#include "utils/circular_queue.h"
 
 static uint16_t transmitter_buffer[UART_TRANSMITTER_QUEUE_SIZE];
 static struct Cqueue transmitter_queue;
@@ -19,7 +19,11 @@ void USART_Transmit(const uint8_t data)
     UDR0 = data;
 }
 
+#if (defined __AVR_ATmega2560__)
+ISR(USART0_UDRE_vect)
+#elif ((defined __AVR_ATmega328__ || __AVR_ATmega328__))
 ISR(USART_UDRE_vect)
+#endif
 { // USART Data Register Empty interrupt
     if (isEmpty(&transmitter_queue))
     {
@@ -34,7 +38,12 @@ ISR(USART_UDRE_vect)
 
 void uart_init(uint16_t ubrr)
 {
-    DDRD |= 2;                                                                         // Configure the Pin D1 as output
+    #if (defined __AVR_ATmega2560__)
+    DDRE |= 2;
+    #elif ((defined __AVR_ATmega328__ || __AVR_ATmega328__))
+    DDRD |= 2;
+    #endif
+                                                                        // Configure the Pin D1 as output
     setupCqueue(&transmitter_queue, &transmitter_buffer, UART_TRANSMITTER_QUEUE_SIZE); // setup transmitter queue
     /*Set baud rate */
     UBRR0H = (unsigned char)(ubrr >> 8);

@@ -4,7 +4,7 @@
  *  Author: thevinh
  */
 
-#include "util/circular_queue.h"
+#include "utils/circular_queue.h"
 #include <string.h>
 void setupCqueue(struct Cqueue *c_queue, uint16_t *array, uint8_t capacity)
 {
@@ -12,7 +12,6 @@ void setupCqueue(struct Cqueue *c_queue, uint16_t *array, uint8_t capacity)
     c_queue->front = 0;
     c_queue->size = 0;
 
-    // This is important, see the enqueue
     c_queue->rear = capacity - 1;
     memset((void *)array, 0, sizeof(uint16_t) * capacity);
     c_queue->array = array;
